@@ -1,0 +1,8 @@
+[package]
+name = "arvidkr-chess-gui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+caspervk-chess = { git = "https://github.com/INDA24PlusPlus/caspervk-chess" }
+ggez = "0.9.3"
