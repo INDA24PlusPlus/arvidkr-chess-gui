@@ -38,6 +38,7 @@ pub fn button_presser( //Changes the move_state, move_from, move_to
     mut game: ResMut<GAME>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
+    let window: &Window = window_query.get_single().unwrap();
     if buttons.just_pressed(MouseButton::Left){
         game.move_state = (game.move_state+1)%3;
         if game.move_state == 0 {
@@ -48,6 +49,21 @@ pub fn button_presser( //Changes the move_state, move_from, move_to
             if let Some(position) = window_query.single().cursor_position() {
                 game.move_from = coords_to_square(position[0], position[1]) as i8;
                 println!("Square: {}!", game.move_from);
+            }
+            const CIRCLE_SCALING: Vec3 = Vec3::new(0.05, 0.05, 0.0);
+
+            let v: Vec<i8> = game.game.get_position_possible_movements(game.move_from);
+            for movi in v {
+                commands.spawn(
+                    (
+                        SpriteBundle {
+                            transform: Transform::from_xyz(index_to_width(movi.into(), window.width()), index_to_height(movi.into(), window.height()), 0.0).with_scale(CIRCLE_SCALING),
+                            texture: asset_server.load("other/glowCircle.png"),
+                            ..default()
+                        },
+                    )
+                );
+                println!("movi: {}", movi);
             }
         }
         else {
@@ -66,6 +82,8 @@ pub fn checker(
     asset_server: Res<AssetServer>,
     mut game: ResMut<GAME>,
 ) {
+    let window: &Window = window_query.get_single().unwrap();
+
     if game.move_state == 2 {
         let v: Vec<i8> = game.game.get_position_possible_movements(game.move_from);
         for movi in v {
@@ -78,8 +96,6 @@ pub fn checker(
         }
 
         println!("checker ms == 2");
-
-        let window: &Window = window_query.get_single().unwrap();
         const BOARD_SCALING: Vec3 = Vec3::new(1.3, 1.3, 0.0);
 
         commands.spawn(
@@ -172,6 +188,7 @@ pub fn spawn_dots(
                 },
             )
         );
+        println!("movi: {}", movi);
     }
 }
 
