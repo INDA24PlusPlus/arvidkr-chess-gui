@@ -97,7 +97,31 @@ pub fn checker(
                 println!("Real Move");
                 let mf = game.move_from;
                 let mt = game.move_to;
-                game.game.do_move(mf, mt);
+                let q = game.game.do_move(mf, mt);
+                println!("q: {:?}", q);
+                if q == caspervk_chess::BoardState::CheckMated(caspervk_chess::Side::White) {
+                    commands.spawn(
+                        (
+                            SpriteBundle {
+                                transform: Transform::from_xyz(window.width()/2.0, window.height()/2.0, 0.0),
+                                texture: asset_server.load("other/whitecheckmate.png"),
+                                ..default()
+                            },
+                        )
+                    );
+                }
+                else if q == caspervk_chess::BoardState::CheckMated(caspervk_chess::Side::Black) {
+                    commands.spawn(
+                        (
+                            SpriteBundle {
+                                transform: Transform::from_xyz(window.width()/2.0, window.height()/2.0, 0.0),
+                                texture: asset_server.load("other/blackcheckmate.png"),
+                                ..default()
+                            },
+                        )
+                    );
+                }
+
             }
         }
 
