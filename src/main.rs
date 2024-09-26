@@ -1,18 +1,84 @@
 use caspervk_chess::*;
+use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
-fn main(){
-	let mut game = Game::new();
-	let possible_movements = game.get_position_possible_movements(board_pos_to_index("a2".to_string()));
-	let board_state = game.do_move(board_pos_to_index("a2".to_string()), board_pos_to_index("a4".to_string()));
-	for x in possible_movements {
-		println!("{}", x);
-	}
-	let npossible_movements = game.get_position_possible_movements(board_pos_to_index("a4".to_string()));
-	for x in npossible_movements {
-		println!("{} -> {}", board_pos_to_index("a4".to_string()), x);
-	}
+pub fn main(){
 
-	for x in game.board_pieces {
-		println!("piece: {:?}", x);
-	}
+    App::new()
+    .insert_resource(GAME {game: caspervk_chess::Game::new()})
+    .add_plugins(DefaultPlugins)
+    .add_systems(Startup, (spawn_camera, spawn_board).chain())
+    .add_systems(Update, spawn_pieces)
+    .run();
+    
+}
+
+#[derive(Resource)]
+
+pub struct GAME {
+    pub game: caspervk_chess::Game,
+}
+
+
+
+
+
+pub fn spawn_board(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    game: ResMut<GAME>,
+) {
+    let window: &Window = window_query.get_single().unwrap();
+    const BOARD_SCALING: Vec3 = Vec3::new(1.3, 1.3, 0.0);
+
+    commands.spawn(
+        
+        SpriteBundle {
+            transform: Transform::from_xyz(window.width()/2.0, window.height()/2.0, 0.0).with_scale(BOARD_SCALING),
+            texture: asset_server.load("board/chessgrille.png"),
+            ..default()
+        },
+    
+    );
+}
+
+
+
+pub fn spawn_pieces(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    game: ResMut<GAME>,
+) {
+    let window: &Window = window_query.get_single().unwrap();
+    const PIECE_SCALING: Vec3 = Vec3::new(1.3, 1.3, 0.0);
+
+    for i in 0..64 {
+        println!("{:?}", game.game.board_pieces[i as usize]);
+    }
+
+    commands.spawn(
+        (
+            SpriteBundle {
+                transform: Transform::from_xyz(9.0*window.width()/32.0, window.height()/20.0 + 9.0*window.height()/160.0, 0.0).with_scale(PIECE_SCALING),
+                texture: asset_server.load("pieces/rook.png"),
+                ..default()
+            },
+        )
+    );
+}
+
+pub fn spawn_camera(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    let window: &Window = window_query.get_single().unwrap();
+
+    commands.spawn(
+        Camera2dBundle {
+            transform: Transform::from_xyz(window.width() / 2.0, window.height()/2.0, 0.0),
+            ..default()
+        }
+    );
 }
