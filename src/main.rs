@@ -50,6 +50,12 @@ pub fn button_presser( //Changes the move_state, move_from, move_to
                 game.move_from = coords_to_square(position[0], position[1]) as i8;
                 println!("Square: {}!", game.move_from);
             }
+
+            if game.game.board_pieces_sides[game.move_from as usize] != game.game.curr_turn {
+                game.move_state = 0;
+                game.move_from = -1;
+                return;
+            }
             const CIRCLE_SCALING: Vec3 = Vec3::new(0.05, 0.05, 0.0);
 
             let v: Vec<i8> = game.game.get_position_possible_movements(game.move_from);
