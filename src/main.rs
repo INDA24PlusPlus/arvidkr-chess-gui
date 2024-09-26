@@ -122,6 +122,10 @@ pub fn checker(
                     );
                 }
 
+                if game.game.board_pieces[mt as usize] == caspervk_chess::Piece::Pawn && (((mt/8) as i64) == 0 || ((mt/8) as i64) == 7) {
+                    game.game.board_pieces[mt as usize] = caspervk_chess::Piece::Queen;
+                }
+
             }
         }
 
