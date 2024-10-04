@@ -15,7 +15,7 @@ pub fn run(){
     let addr: String = "127.0.0.1:5000".to_string();
 
     let stream = TcpStream::connect(addr);
-    let mut connection = CON {stream: stream.expect("REASON")};
+    let mut connection = CON {stream: stream.expect("REASON"), colour: caspervk_chess::Side::Black};
 
     connection.stream.set_nonblocking(true);
 
@@ -31,24 +31,37 @@ pub fn run(){
     let ser: Vec<u8> = first_state.try_into().unwrap();
     connection.stream.write_all(&ser);
 
-    let mut data: [u8; 1024] = [0u8; 1024];
-    let res = connection.stream.read(&mut data);
+    let mut counter: i64 = 0;
+    let mut will_be_white = caspervk_chess::Side::Black;
+    loop {
+        if counter%10000000 == 0 {
+            println!("Still waiting for start!");
+        }
+        let mut data: [u8; 1024] = [0u8; 1024];
+        let res = connection.stream.read(&mut data);
 
-    let ndata = match res {
-        Ok(size) => data[..size].to_vec(),
-        Err(_) => Vec::new(),
-    };
+        let ndata = match res {
+            Ok(size) => data[..size].to_vec(),
+            Err(_) => Vec::new(),
+        };
 
-    let wanted_state: Start = Start::try_from(&ndata as &[u8]).unwrap();
-
-    println!("Engaging in chess game with {:?}", wanted_state.name);
-
+        if ndata.len() != 0 {
+            let wanted_state: Start = Start::try_from(&ndata as &[u8]).unwrap();
+            println!("Chessing with {:?}", wanted_state.name);
+            if !wanted_state.is_white {
+                will_be_white = caspervk_chess::Side::White;
+            }
+            break;
+        }
+        counter += 1;
+    }
+    
 
 
     
     App::new()
     .insert_resource(GAME {game: caspervk_chess::Game::new(), move_state: 0, move_from: -1, move_to: -1})
-    .insert_resource(CON {stream: connection.stream})
+    .insert_resource(CON {stream: connection.stream, colour: will_be_white})
     .add_plugins(DefaultPlugins)
     .add_systems(Startup, (spawn_camera, spawn_board, spawn_pieces).chain())
     .add_systems(Update, (button_presser, checker).chain())
@@ -69,6 +82,7 @@ pub struct GAME {
 
 pub struct CON {
     pub stream: TcpStream,
+    pub colour: caspervk_chess::Side,
 }
 
 pub fn coords_to_square(x: f32, y: f32) -> i64 { //INTE KLAR
@@ -147,15 +161,22 @@ pub fn checker(
         Err(_) => Vec::new(),
     };
 
-    let movi: Move = Move::try_from(&ndata as &[u8]).unwrap();
+    if ndata.len() != 0 && game.game.curr_turn != connection.colour{
+        println!("SKIBIDI rcvd!");
+        println!("{:?}", ndata);
+        let movi: Move = Move::try_from(&ndata as &[u8]).unwrap();
 
-    let ok_ack = Ack {
-        ok: true,
-        end_state: None,
-    };
-    let ser: Vec<u8> = ok_ack.try_into().unwrap();
-    connection.stream.write_all(&ser);
-    game.game.do_move((movi.from.0*8 + movi.from.1) as i8, (movi.to.0*8+movi.to.1) as i8);
+        let ok_ack = Ack {
+            ok: true,
+            end_state: None,
+        };
+        let ser: Vec<u8> = ok_ack.try_into().unwrap();
+        connection.stream.write_all(&ser);
+        println!("client movi {:?}", movi);
+
+        //ok_ack.serialize(&mut Serializer::new(&connection.stream))?;
+        game.game.do_move((movi.from.0*8 + movi.from.1) as i8, (movi.to.0*8+movi.to.1) as i8);
+    }
     
 
     if game.move_state == 2 {
@@ -180,6 +201,28 @@ pub fn checker(
 
                 let ser: Vec<u8> = request_move.try_into().unwrap();
                 connection.stream.write_all(&ser);
+
+                let mut counter: i64 = 0;
+
+                loop {
+                    if counter%100000000 == 0 {
+                        println!("Client waiting for ack!");
+                    }
+                    let mut data: [u8; 1024] = [0u8; 1024];
+                    let res = connection.stream.read(&mut data);
+
+                    let ndata = match res {
+                        Ok(size) => data[..size].to_vec(),
+                        Err(_) => Vec::new(),
+                    };
+
+                    if ndata.len() != 0 {
+                        println!("Found ack: {:?}", ndata);
+                        let wanted_state: Ack = Ack::try_from(&ndata as &[u8]).unwrap();
+                        break;
+                    }
+                    counter += 1;
+                }
 
                 let q = game.game.do_move(mf, mt);
 
