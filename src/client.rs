@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize, Serializer, Deserializer};
 
 
 pub fn run(){
-    let addr: String = "127.0.0.1:5000".to_string();
+    let addr: String = "130.229.129.233:5000".to_string();
 
     let stream = TcpStream::connect(addr);
     let mut connection = CON {stream: stream.expect("REASON"), colour: caspervk_chess::Side::Black};
@@ -110,6 +110,11 @@ pub fn button_presser( //Changes the move_state, move_from, move_to
         else if game.move_state == 1 {
             if let Some(position) = window_query.single().cursor_position() {
                 game.move_from = coords_to_square(position[0], position[1]) as i8;
+                if game.move_from < 0 || game.move_from >= 64 {
+                    game.move_state = 0;
+                    println!("Ye dude");
+                    return;
+                }
                 println!("Square: {}!", game.move_from);
             }
 
@@ -175,7 +180,7 @@ pub fn checker(
         println!("client movi {:?}", movi);
 
         //ok_ack.serialize(&mut Serializer::new(&connection.stream))?;
-        game.game.do_move((movi.from.0*8 + movi.from.1) as i8, (movi.to.0*8+movi.to.1) as i8);
+        game.game.do_move((movi.from.0 + movi.from.1*8) as i8, (movi.to.0+movi.to.1*8) as i8);
     }
     
 
@@ -188,12 +193,14 @@ pub fn checker(
                 let mt = game.move_to;
 
                 let mut request_move = Move {
-                    from: (((mf/8) as u8), ((mf%8) as u8)),
-                    to: (((mt/8) as u8), ((mt%8) as u8)),
+                    from: ((mf%8) as u8,(mf/8) as u8),
+                    to: ((mt%8) as u8, (mt/8) as u8),
                     promotion: None,
                     forfeit: false,
                     offer_draw: false,
                 };
+
+                println!("{}{} {}{}", request_move.from.0, request_move.from.1, request_move.to.0, request_move.to.1);
 
                 if game.game.board_pieces[mf as usize] == caspervk_chess::Piece::Pawn && ((mt/8) as i8 == 0 || (mt/8) as i8 == 7){
                     request_move.promotion = Some(chess_networking::PromotionPiece::Queen);

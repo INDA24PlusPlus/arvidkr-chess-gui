@@ -107,6 +107,11 @@ pub fn button_presser( //Changes the move_state, move_from, move_to
         else if game.move_state == 1 {
             if let Some(position) = window_query.single().cursor_position() {
                 game.move_from = coords_to_square(position[0], position[1]) as i8;
+                if game.move_from < 0 || game.move_from >= 64 {
+                    game.move_state = 0;
+                    println!("Ye dude");
+                    return;
+                }
                 println!("Square: {}!", game.move_from);
             }
 
