@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize, Serializer, Deserializer};
 
 
 pub fn run(){
-    let addr: String = "130.229.129.233:5000".to_string();
+    let addr: String = "127.0.0.1:5000".to_string();
 
     let stream = TcpStream::connect(addr);
     let mut connection = CON {stream: stream.expect("REASON"), colour: caspervk_chess::Side::Black};
@@ -32,7 +32,7 @@ pub fn run(){
     connection.stream.write_all(&ser);
 
     let mut counter: i64 = 0;
-    let mut will_be_white = caspervk_chess::Side::Black;
+    let mut will_be_white = caspervk_chess::Side::White;
     loop {
         if counter%10000000 == 0 {
             println!("Still waiting for start!");
@@ -49,7 +49,7 @@ pub fn run(){
             let wanted_state: Start = Start::try_from(&ndata as &[u8]).unwrap();
             println!("Chessing with {:?}", wanted_state.name);
             if !wanted_state.is_white {
-                will_be_white = caspervk_chess::Side::White;
+                will_be_white = caspervk_chess::Side::Black;
             }
             break;
         }
@@ -57,6 +57,7 @@ pub fn run(){
     }
     
 
+    println!("will_be_white; {:?}", will_be_white);
 
     
     App::new()
@@ -178,6 +179,8 @@ pub fn checker(
         let ser: Vec<u8> = ok_ack.try_into().unwrap();
         connection.stream.write_all(&ser);
         println!("client movi {:?}", movi);
+
+        println!("{}, {}", movi.from.0 + movi.from.1*8, movi.to.0+movi.to.1*8);
 
         //ok_ack.serialize(&mut Serializer::new(&connection.stream))?;
         game.game.do_move((movi.from.0 + movi.from.1*8) as i8, (movi.to.0+movi.to.1*8) as i8);

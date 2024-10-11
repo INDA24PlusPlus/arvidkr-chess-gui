@@ -22,7 +22,7 @@ pub fn run(){
     connection.stream.set_nonblocking(true);
 
     let mut first_state = Start{
-        is_white: true,
+        is_white: false,
         name: Some("Ohio".to_string()),
         fen: Some("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1".to_string()),
         time: None,
@@ -177,7 +177,7 @@ pub fn checker(
         connection.stream.write_all(&ser);
         println!("server movi {:?}", movi);
         //ok_ack.serialize(&mut Serializer::new(&connection.stream))?;
-        game.game.do_move((movi.from.0*8 + movi.from.1) as i8, (movi.to.0*8+movi.to.1) as i8);
+        game.game.do_move((movi.from.0 + movi.from.1*8) as i8, (movi.to.0+movi.to.1*8) as i8);
     }
 
     
@@ -191,14 +191,14 @@ pub fn checker(
                 let mt = game.move_to;
 
                 let mut request_move = Move {
-                    from: (((mf/8) as u8), ((mf%8) as u8)),
-                    to: (((mt/8) as u8), ((mt%8) as u8)),
+                    from: (((mf%8) as u8), ((mf/8) as u8)),
+                    to: (((mt%8) as u8), ((mt/8) as u8)),
                     promotion: None,
                     forfeit: false,
                     offer_draw: false,
                 };
 
-                if game.game.board_pieces[mf as usize] == caspervk_chess::Piece::Pawn && ((mt/8) as i8 == 0 || (mt/8) as i8 == 7){
+                if game.game.board_pieces[mf as usize] == caspervk_chess::Piece::Pawn && ((mt%8) as i8 == 0 || (mt%8) as i8 == 7){
                     request_move.promotion = Some(chess_networking::PromotionPiece::Queen);
                 }
 
